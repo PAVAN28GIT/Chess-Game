@@ -34,7 +34,6 @@ function SignUpPage() {
   const handleGoogleSignIn = async () => {
     try{
       window.location.href = `${BackendURL}/api/auth/google`;
-    
     }catch(error){
       console.error(error);
       showToast(error.message || 'An error occurred', 'error');
