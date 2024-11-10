@@ -4,7 +4,6 @@ import dotenv from 'dotenv';
 
 dotenv.config();
 
-
 // Register a new user
 export const register = async (req, res) => {
   const { email, password, name } = req.body;
@@ -69,7 +68,6 @@ export const login = async (req, res) => {
 export const googleAuth = passport.authenticate("google", {
   scope: ["profile", "email"], // permissions you are requesting from the user
 });
-
 
 // callback after Google has authenticated the user
 export const googleAuthCallback = (req, res) => {

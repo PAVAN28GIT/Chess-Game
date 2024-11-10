@@ -35,7 +35,6 @@ userSchema.pre("save", async function (next) {
   }
 });
 
-
 userSchema.methods.comparePassword = async function (inputPassword) {
   return await bcrypt.compare(inputPassword, this.password);
 };
@@ -64,17 +63,5 @@ userSchema.methods.generateRefreshToken = function () {
   );
 };
 
-
 const User = mongoose.model("User", userSchema);
 export default User;
-
-
-//When the access token expires, the client gets  HTTP 401 Unauthorized error.(indicating that the token has expired).
-
-//At this point, the client sends the refresh token to the server in order to obtain a new access token.
-//The server verifies the refresh token and generates a new access token using the following method:
-//Refresh tokens are used to extend user sessions without requiring the user to log in repeatedly.
-//access token (short-lived) and a refresh token (long-lived).
-
-// improvements :
-//You can implement token revocation on the server by blacklisting already used refresh tokens (this can be done by storing the refresh token in the database and marking it as revoked when the user logs out or the token is compromised).

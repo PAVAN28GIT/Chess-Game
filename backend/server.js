@@ -1,15 +1,32 @@
 import express from 'express';
-import connectDB from './database/connect.js';
+import { createServer } from 'http';
+import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import cors from 'cors';
-import authRoutes from './routes/authRoutes.js';
 import passport from "passport";
+
+// Database Connection
+import connectDB from './database/connect.js';
+
+//routes
+import authRoutes from './routes/authRoutes.js';
+import gameRoutes from './routes/gameRoutes.js';
+
+// Passport Config
 import './config/passport.js';
 
-
 dotenv.config();
+
+// Create an Express app
 const app = express();
 
+// Create an HTTP server with Express
+const server = createServer(app);
+
+// Initialize Socket.IO with the HTTP server
+const io = new Server(server);
+
+lk
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
@@ -31,6 +48,7 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
+app.use('/api/game', gameRoutes);
 
 
 app.listen(8000, () => {
