@@ -15,7 +15,6 @@ passport.use(
     },
     async (accessToken, refreshToken, profile, done) => {
       try {
-        console.log('Google Profile:', profile);
 
         // Check if user already exists
         let user = await User.findOne({ googleId: profile.id });
@@ -33,7 +32,6 @@ passport.use(
           });
 
           await user.save();
-          console.log('User saved to DB:', user);
         }
 
         const jwtToken = user.generateAccessToken(); 
