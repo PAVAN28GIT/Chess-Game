@@ -1,18 +1,58 @@
-import React from "react";
+import React, { useState }from "react";
 import LeftSlide from "./LeftSlide";
 import { FcGoogle } from "react-icons/fc";
 import { Link } from "react-router-dom";
+import { showToast } from "../../utils/toast";
+import {userAuth} from '../../hooks/userAuth';
+import BackendURL from '../../utils/config.js';
 
 function SignUpPage() {
+  const [name, setName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
+  const {handleRegister} = userAuth();
+
+  
+  const handleSignIn = async (e) => {
+    e.preventDefault();
+    try {
+      if (!name || !email || !password) {
+        return showToast('Please fill in all fields', 'error');
+      }
+      const userData = { name, email, password };
+      await handleRegister(userData);
+
+      setName("");
+      setEmail("");
+      setPassword("");
+    } catch (error) {
+      console.error(error);
+      showToast(error.message || 'An error occurred', 'error'); // Displaying error message
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    try{
+      window.location.href = `${BackendURL}/api/auth/google`;
+    
+    }catch(error){
+      console.error(error);
+      showToast(error.message || 'An error occurred', 'error');
+    }
+  };
+
+
   return (
-    <div className="flex bg-[#f8f6ff] justify-center items-center">
+    <div className="flex bg-[#f8f6ff] justify-center items-center h-screen">
       <LeftSlide />
 
       <div className=" w-1/2 px-10 text-black">
         <div className="flex flex-col items-center justify-center space-y-5">
           <h1 className="font-black text-5xl font-lato py-4">Create an Account</h1>
 
-          <button className="border-black w-full lg:w-1/2 border-2 rounded-xl flex items-center justify-center space-x-2 py-2 hover:bg-black hover:text-white transition hover:ease-in-out duration-150">
+          <button
+            onClick={handleGoogleSignIn} 
+          className="border-black w-full lg:w-1/2 border-2 rounded-xl flex items-center justify-center space-x-2 py-2 hover:bg-black hover:text-white transition hover:ease-in-out duration-150">
             <span className="text-2xl">
               <FcGoogle />
             </span>
@@ -25,8 +65,10 @@ function SignUpPage() {
                 
                 className='border-2 w-full outline-none border-slate-500 p-3 px-4 mx-4 rounded-xl'
                 placeholder='Enter Name'
-                type='text' name='text'
+                type='text' name='userName'
                 id='name'
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 required
             />
             <input
@@ -35,6 +77,8 @@ function SignUpPage() {
                 placeholder='Enter the email'
                 type='email' name='email'
                 id='email'
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
             />
             <input
@@ -43,11 +87,15 @@ function SignUpPage() {
                 placeholder='Enter the password'
                 type='password' name='password'
                 id='password'
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 required
             />
           </div>
 
-          <button className="border-black w-full lg:w-1/2 border-2 rounded-xl flex items-center justify-center space-x-2 py-2 bg-black text-white hover:scale-105 duration-300 transition hover:ease-in-out">
+          <button 
+          onClick={handleSignIn}
+          className="border-black w-full lg:w-1/2 border-2 rounded-xl flex items-center justify-center space-x-2 py-2 bg-black text-white hover:scale-105 duration-300 transition hover:ease-in-out">
             Create Account
           </button>
          

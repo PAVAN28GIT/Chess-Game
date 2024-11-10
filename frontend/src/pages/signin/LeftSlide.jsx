@@ -15,7 +15,7 @@ function LeftSlide() {
     </video>
     <div className="absolute inset-0 bg-black opacity-60"></div>
     <div className="absolute  text-white px-20 mt-32">
-      <h1 className="text-8xl font-black mb-4 font-lato">Ready for Your Next Game? <br></br> Log In to Play</h1>
+      <h1 className="text-9xl font-black mb-4 font-lato">Log In to Play Your Next Game</h1>
     </div>
   </div>
   )

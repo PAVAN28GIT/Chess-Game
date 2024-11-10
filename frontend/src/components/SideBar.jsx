@@ -6,7 +6,7 @@ import { NavLink } from 'react-router-dom';
 
 function SideBar() {
   return (
-    <div className='h-full w-20 z-20 bg-gradient-to-b from-black via-gray-900 to-black flex flex-col text-white items-center py-8 justify-between'>
+    <div className='h-full w-20 z-50 bg-gradient-to-b from-black via-gray-900 to-black flex flex-col text-white items-center py-8 justify-between'>
       
       <div className="flex justify-center items-center">
         <SiLichess className='text-4xl' />
@@ -20,12 +20,12 @@ function SideBar() {
         <SidebarIcon
           icon={<GoHomeFill size="28" />}
           text="Home"
-          to="#"
+          to="/"
         />
         <SidebarIcon
           icon={<IoGameController size="28" />}
           text="Start Game"
-          to="#"
+          to="/sign-in"
         />
       </div>
 
