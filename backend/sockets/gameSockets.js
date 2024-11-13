@@ -4,7 +4,9 @@ import Game from '../models/gameModel.js';
 import { initializeGame, makeMove, getBoardState, isGameOver, getGameResult } from '../utils/chess.js';
 
 export default function setupGameSocket(io) {
+
     io.on('connection', (socket) => {
+        // socket means the client that is connected to the server 
         console.log('New client connected:', socket.id);
 
         // Listen for player joining a game

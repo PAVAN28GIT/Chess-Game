@@ -18,6 +18,10 @@ const userSchema = new mongoose.Schema({
   googleId: {
     type: String,
   },
+  games : {
+    type: Array,
+    default: []
+  }
 });
 
 // pre is Middleware from mongoose... its used here before save operation to hash the password before saving

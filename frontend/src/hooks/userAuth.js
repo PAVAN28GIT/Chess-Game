@@ -5,7 +5,6 @@ import BackendURL from '../utils/config.js';
 export const userAuth = () => {
     const navigate = useNavigate();
 
-
     const handleRegister = async (userData) => {
         try {
           showToast("Creating account...", "loading");
@@ -63,7 +62,6 @@ export const userAuth = () => {
           showToast(error.message, "error");
         }
     }
-
 
     return { handleRegister , handleLogIn };
 }
