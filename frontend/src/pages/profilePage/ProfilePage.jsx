@@ -31,11 +31,11 @@ function ProfilePage() {
 
 export default ProfilePage;
 
-function GameCard({img}){
+function GameCard({img , color}){
     return(
-        <div className="bg-zinc-900 flex justify-between w-full h-full rounded-xl p-5 mb-10">
+        <div className="bg-zinc-900 flex justify-between w-full h-full rounded-xl p-5 mb-10 ">
             <div>
-                <img src={img} alt="icon" className="size-20"/>
+                <img src={img} alt="icon" className="size-20 "/>
             </div>
             <div>
                 <h1>Game ID : </h1>
