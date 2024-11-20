@@ -36,7 +36,7 @@ passport.use(
 
         const jwtToken = user.generateAccessToken(); 
 
-        return done(null, jwtToken); 
+        return done(null, jwtToken , user); 
       } catch (error) {
         console.error('Error in Google OAuth authentication:', error);
         return done(error, false);

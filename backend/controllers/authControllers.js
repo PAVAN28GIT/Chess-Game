@@ -7,7 +7,6 @@ dotenv.config();
 // Register a new user
 export const register = async (req, res) => {
   const { email, password, name } = req.body;
-  console.log(req.body);
   try {
     const existingUser = await User.findOne({ email });
     if (existingUser) {
@@ -66,22 +65,23 @@ export const login = async (req, res) => {
 
 // starting point of Google OAuth authentication
 export const googleAuth = passport.authenticate("google", {
-  scope: ["profile", "email"], // permissions you are requesting from the user
+  scope: ["profile", "email"], 
 });
 
 // callback after Google has authenticated the user
 export const googleAuthCallback = (req, res) => {
-  passport.authenticate("google", (err, jwtToken) => {
+  passport.authenticate("google", (err, jwtToken ,user) => {
     if (err) {
-      return res.redirect(`${process.env.FRONTEND_URL}/sign-in?login=failed`);
+      return res.redirect(`${process.env.FRONTEND_URL}/sign-in`);
     }
     if (jwtToken) {
-      res.cookie("jwtToken", jwtToken, {
+      res.cookie("jwtToken", jwtToken ,{
         httpOnly: true,
         sameSite: "None",
         secure: true,
       });
-      return res.redirect(`${process.env.FRONTEND_URL}/dashboard?login=success`);
+      
+      return res.redirect(`${process.env.FRONTEND_URL}/dashboard?user=${user._id}`);
     }
     return res.redirect(`${process.env.FRONTEND_URL}/sign-in?login=failed`);
   })(req, res);

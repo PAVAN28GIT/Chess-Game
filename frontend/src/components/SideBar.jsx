@@ -1,11 +1,17 @@
 import { SiLichess } from "react-icons/si";
 import { GoHomeFill } from "react-icons/go";
-import { FaChess } from "react-icons/fa";
+
 import { NavLink } from "react-router-dom";
 import { CiLogout } from "react-icons/ci";
 import { GiRamProfile } from "react-icons/gi";
+import { useContext } from "react";
+import { AuthContext } from "../context/AuthContext";
 
 function SideBar() {
+  const {user} = useContext(AuthContext);
+
+  
+
   return (
     <div className="h-full fixed w-24 z-50 bg-gradient-to-b from-black via-gray-900 to-black flex flex-col text-white items-center py-8 justify-between">
       <div className="flex justify-center items-center">
@@ -18,15 +24,15 @@ function SideBar() {
           text="Home"
           to="/dashboard"
         />
-        <SidebarIcon
+        {/* <SidebarIcon
           icon={<FaChess size="28" />}
           text="Start Game"
           to="/game/join"
-        />
+        /> */}
         <SidebarIcon
           icon={<GiRamProfile size="28" />}
           text="Profile"
-          to="/user/:userid"
+          to={`/user/${user}`}   
         />
       </div>
       <Divider />

@@ -19,8 +19,8 @@ function SignInPage() {
         return showToast('Please fill in all fields', 'error');
       }
       const userData = { email, password };
-      await handleLogIn(userData);
- 
+      await handleLogIn(userData );
+
     } catch (error) {
       console.error(error);
       showToast(error.message || 'An error occurred', 'error'); // Displaying error message

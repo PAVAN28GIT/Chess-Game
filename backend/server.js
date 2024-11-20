@@ -1,49 +1,46 @@
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
+import cors from 'cors'; 
 import dotenv from 'dotenv';
+import cookieParser from 'cookie-parser';
 import passport from 'passport';
-
-// Database Connection
 import connectDB from './database/connect.js';
+import setupGameSocket from './sockets/gameSockets.js';
+import './config/passport.js';
 
 //routes
 import authRoutes from './routes/authRoutes.js';
-import gameRoutes from './routes/gameRoutes.js';
-import profileRoutes from './routes/profileRoutes.js';
-
-// Game Socket
-import setupGameSocket from './sockets/gameSockets.js';
-
-// Passport Config
-import './config/passport.js';
-
+import userRoutes from './routes/userRoutes.js';
 
 dotenv.config();
 
+connectDB(); // Database Connection
 
-const app = express();  // Create an express app
-const server = http.createServer(app);  // Create HTTP server using express app
-// Initialize Socket.io with the HTTP server
-const io = new Server(server, {
-    cors: {
-        origin: process.env.FRONTEND_URL, 
-        methods: ['GET', 'POST'],
-        credentials: true,
-    }
-});
+const app = express();  
 
-// Setup WebSocket for game events
-setupGameSocket(io);  // Pass the socket.io instance to the function
+const corsOptions = {
+    origin: process.env.FRONTEND_URL,  
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],
+    credentials: true,  // Allow cookies to be sent with requests
+};
+
+app.use(cors(corsOptions)); // CORS for HTTP requests
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(passport.initialize());
+app.use(cookieParser());
+
+const server = http.createServer(app);  // create HTTTP server using express app
+
+const io = new Server(server, {
+    cors: corsOptions
+});
 
 
-// Database Connection
-connectDB();
 
+setupGameSocket(io);  
 
 app.get('/', (req, res) => {
     res.send('Backend API is running....');
@@ -51,8 +48,8 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/users', profileRoutes); 
-app.use('/api/games', gameRoutes);
+app.use('/api/user', userRoutes); 
+// app.use('/api/game', gameRoutes);
 
 
 server.listen(8000, () => {

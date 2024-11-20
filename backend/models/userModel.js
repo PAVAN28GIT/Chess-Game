@@ -19,12 +19,11 @@ const userSchema = new mongoose.Schema({
     type: String,
   },
   games : {
-    type: Array,
+    type: Array, // Array of game ids
     default: []
   }
 });
 
-// pre is Middleware from mongoose... its used here before save operation to hash the password before saving
 userSchema.pre("save", async function (next) {
   if (this.isModified("password") || this.isNew) {
     try {
@@ -43,8 +42,7 @@ userSchema.methods.comparePassword = async function (inputPassword) {
   return await bcrypt.compare(inputPassword, this.password);
 };
 
-//Once the user logs-in, the backend server generates the access token using below method, the token is sent to the front-end. 
-//The client then includes this token in the Authorization header for subsequent API requests.
+
 userSchema.methods.generateAccessToken = function () {
   return jwt.sign(
       {
@@ -52,8 +50,8 @@ userSchema.methods.generateAccessToken = function () {
           name: this.name,
           email: this.email,
       },
-      process.env.ACCESS_TOKEN_SECRET,  // Secret key should be kept secure
-      { expiresIn: process.env.ACCESS_TOKEN_EXPIRY.toString() }  // Short expiry time, e.g., 15 minutes
+      process.env.ACCESS_TOKEN_SECRET,  
+      { expiresIn: process.env.ACCESS_TOKEN_EXPIRY.toString() } 
   );
 };
 

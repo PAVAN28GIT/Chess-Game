@@ -1,41 +1,48 @@
-// chess.js
-import { Chess } from 'chess.js';
 
-export function initializeGame() {
-    return new Chess();  // Creates a new Chess game with the initial FEN
-}
+export const startTimer = (roomId, timers, io) => {
+    timers[roomId].interval = setInterval(() => {
+        const currentPlayer = timers[roomId].currentTimer;
 
-export function makeMove(chessInstance, move) {
-    const moveResult = chessInstance.move(move);
-    return moveResult ? true : false;  // Return true if the move was valid, else false
-}
+        // Decrease the timer for the current player
+        timers[roomId][currentPlayer] -= 1;
 
-export function getBoardState(chessInstance) {
-    return chessInstance.fen();
-}
+        // Emit the updated timer to both players
+        io.to(roomId).emit('timerUpdate', timers[roomId]);
 
-export function isGameOver(chessInstance) {
-    return chessInstance.game_over() || chessInstance.in_checkmate() || chessInstance.in_stalemate() || chessInstance.in_threefold_repetition() || chessInstance.insufficient_material();
-}
+        // If the timer reaches zero, end the game
+        if (timers[roomId][currentPlayer] <= 0) {
+            clearInterval(timers[roomId].interval);
+            const winner = currentPlayer === 'player1' ? 'player2' : 'player1';
 
-export function getGameResult(chessInstance) {
-    if (chessInstance.in_checkmate()) {
-        return 'checkmate';
-    } else if (chessInstance.in_stalemate()) {
-        return 'stalemate';
-    } else if (chessInstance.in_draw()) {
-        return 'draw';
-    } else {
-        return 'ongoing';
+            io.to(roomId).emit('gameOver', {
+                result: 'timeout',
+                winner,
+            });
+        }
+    }, 1000); // Run every second
+};
+
+export const isGameOver = (chess) => {
+    if (chess.in_checkmate()) return 'checkmate';
+    if (chess.in_draw()) return 'draw';
+    if (chess.in_stalemate()) return 'stalemate';
+    if (chess.insufficient_material()) return 'insufficient material';
+    if (chess.in_threefold_repetition()) return 'threefold repetition';
+    return null;
+};
+
+export const getGameResult = (chess) => {
+    const gameOverType = isGameOver(chess);
+
+    switch (gameOverType) {
+        case 'checkmate':
+            return 'checkmate';
+        case 'draw':
+        case 'stalemate':
+        case 'insufficient material':
+        case 'threefold repetition':
+            return 'draw';
+        default:
+            return null;
     }
-}
-
-export function isCheckmateOrCheck(chessInstance) {
-    return chessInstance.in_checkmate() || chessInstance.in_check();
-}
-
-export async function updateGameState(game, chessInstance, player1Id, player2Id) {
-    game.boardState = chessInstance.fen();
-    game.currentPlayer = game.currentPlayer.equals(player1Id) ? player2Id : player1Id;
-    await game.save();
-}
+};
