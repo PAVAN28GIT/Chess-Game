@@ -21,6 +21,7 @@ export const register = async (req, res) => {
   }
 };
 
+//login
 export const login = async (req, res) => {
   const { email, password } = req.body;
 
@@ -80,9 +81,26 @@ export const googleAuthCallback = (req, res) => {
         sameSite: "None",
         secure: true,
       });
-      
       return res.redirect(`${process.env.FRONTEND_URL}/dashboard?user=${user._id}`);
     }
-    return res.redirect(`${process.env.FRONTEND_URL}/sign-in?login=failed`);
+    return res.redirect(`${process.env.FRONTEND_URL}/sign-in`);
   })(req, res);
+};
+
+
+//logout
+export const logout = async (req, res) => {
+
+  res.clearCookie("jwtToken", {
+    httpOnly: true,  
+    secure: true,   
+    sameSite: "None", 
+  });
+  res.clearCookie("refreshToken", {
+    httpOnly: true,  
+    secure: true,   
+    sameSite: "None", 
+  });
+  
+  res.json({ message: "Logged out" });
 };

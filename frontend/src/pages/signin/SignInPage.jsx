@@ -20,12 +20,10 @@ function SignInPage() {
       }
       const userData = { email, password };
       await handleLogIn(userData );
-
     } catch (error) {
       console.error(error);
       showToast(error.message || 'An error occurred', 'error'); // Displaying error message
     }
-
   }
 
   const handleGoogleSignIn = async () => {

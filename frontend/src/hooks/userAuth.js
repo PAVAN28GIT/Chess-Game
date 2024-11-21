@@ -43,10 +43,10 @@ export const userAuth = () => {
   const handleLogIn = async (userData) => {
     try {
       showToast("Logging in...", "loading");
-
       const response = await fetch(`${BackendURL}/api/auth/sign-in`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials : 'include',
         body: JSON.stringify(userData), // Converting object to JSON string
       });
 
@@ -55,7 +55,9 @@ export const userAuth = () => {
       showToast("", "dismiss");
       if (response.ok) {
         showToast("Logged in successfully", "success");
+        console.log("normal login ",data );
         setUser(data.user._id); // Set user in context
+        console.log("after login sending to dashboard and data.user._id is : ",data.user._id);
         navigate("/dashboard"); // Redirect to dashboard
       } else {
         showToast(data.message, "error");

@@ -1,14 +1,31 @@
+import { useContext } from "react";
+
 import { SiLichess } from "react-icons/si";
 import { GoHomeFill } from "react-icons/go";
-
-import { NavLink } from "react-router-dom";
 import { CiLogout } from "react-icons/ci";
 import { GiRamProfile } from "react-icons/gi";
-import { useContext } from "react";
+
+import { NavLink, useNavigate } from "react-router-dom";
+
 import { AuthContext } from "../context/AuthContext";
+import BackendURL from "../utils/config.js";
+import { showToast } from "../utils/toast.js";
 
 function SideBar() {
   const {user} = useContext(AuthContext);
+  const navigate = useNavigate();
+
+  const handleLogout = async() =>{
+    const res = await fetch( `${BackendURL}/api/auth/logout`, {
+      method: 'POST',
+      credentials: 'include',
+    });
+    if(res.ok){
+      showToast('Logged out successfully', 'success');
+      navigate('/');
+      return;
+    }
+  }
 
   
 
@@ -24,11 +41,7 @@ function SideBar() {
           text="Home"
           to="/dashboard"
         />
-        {/* <SidebarIcon
-          icon={<FaChess size="28" />}
-          text="Start Game"
-          to="/game/join"
-        /> */}
+
         <SidebarIcon
           icon={<GiRamProfile size="28" />}
           text="Profile"
@@ -36,12 +49,9 @@ function SideBar() {
         />
       </div>
       <Divider />
-      <div>
-        <SidebarIcon
-          icon={<CiLogout size="28" />}
-          text="Logout"
-          to="/sign-in"
-        />
+      <div className=" group relative hover:scale-105 hover:bg-zinc-800 rounded-full p-3">
+        <p className=" absolute opacity-0 group-hover:opacity-100 left-16 ">Logout</p>
+        <CiLogout size="28" onClick={handleLogout} className="cursor-pointer" />
       </div>
     </div>
   );

@@ -5,7 +5,6 @@ import { AuthContext } from "../../context/AuthContext";
 
 function LandingPage() {
   const { user } = useContext(AuthContext);
-
   return (
     <>
       <Sidebar />

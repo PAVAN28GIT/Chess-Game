@@ -14,10 +14,12 @@ function DashboardPage() {
 
   useEffect(() => {
     if (userid && !user) {
-      setUser(userid);
+      (userid);
       console.log("user set through url");
     }
   }, []);
+
+  console.log("user in dashboard : ", user);
 
   return (
     <div className="flex h-full w-full bg-zinc-800">

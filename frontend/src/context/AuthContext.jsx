@@ -9,10 +9,6 @@ const AuthProvider = ({ children }) => {
   useEffect(() => {
     const checkUserStatus = async () => {
       try {
-        if (!user) {
-          console.log("Please login....")
-          return; 
-        }
         const response = await fetch(`${BackendURL}/api/auth/check-auth`, {
           method: 'GET',
           credentials: 'include',
@@ -33,7 +29,7 @@ const AuthProvider = ({ children }) => {
 
 
   useEffect(() => {
-    console.log("global user is set to ", user);
+    console.log("global user context is begin changed... " , user)
   }, [user]);
 
   return (

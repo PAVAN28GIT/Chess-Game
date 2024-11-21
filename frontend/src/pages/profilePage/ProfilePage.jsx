@@ -23,7 +23,8 @@ function ProfilePage() {
       }
 
       try {
-        const resp = await fetch(`${BackendURL}/api/user/${user}`, {
+        const id = user;
+        const resp = await fetch(`${BackendURL}/api/profile/${id}`, {
           method: "GET",
           credentials: "include",
         });
@@ -31,6 +32,7 @@ function ProfilePage() {
         if (resp.ok) {
           const data = await resp.json();
           setUserProfile(data);
+          console.log("profile data : " , data)
         } else {
           // Handle non-200 response codes
           showToast("Error fetching User", "error");
@@ -57,7 +59,7 @@ function ProfilePage() {
           <div className="flex flex-col justify-center w-full space-y-2">
             <img src={profilpic} alt="" />
             <h1 className="text-center font-bold text-3xl py-6">
-              Pavan Kumar K
+              {userProfile?.user?.name}
             </h1>
             <h1 className="px-10 "> Games Played : </h1>
             <h1 className="px-10 "> Games Won : </h1>
