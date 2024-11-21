@@ -6,7 +6,7 @@ const gameSchema = new mongoose.Schema({
     
     boardState: { 
         type: String, 
-        default: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1"  // FEN string
+        default: "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1" 
     },
     currentPlayer: { 
         type: mongoose.Schema.Types.ObjectId, 

@@ -1,41 +1,44 @@
-import Chess from "chess.js";
-import Game from "../models/gameModel.js";
+import { Chess } from 'chess.js';
+import Game from '../models/gameModel.js';
 import {startTimer , isGameOver , getGameResult} from "../utils/chess.js";
 
+let waitingQueue = [];
+let timers = {};
 
 export default function setupGameSocket(io) {
-    let waitingQueue = [];
-    let timers = {};
   
     io.on("connection", (socket) => {
       console.log("New Client connected:", socket.id);
-  
+
       socket.on("startGame", async (playerId) => {
-        console.log(`${playerId} clicked on start game button`);
+    
         try {
           if (waitingQueue.length === 0) {
             const roomId = `room-${playerId}`;
-            waitingQueue.push({ playerId, roomId });
-            socket.join(roomId);
+            waitingQueue.push({ playerId , roomId });
+            socket.join(roomId); // join that room
+            console.log(` ${playerId} is waiting for an opponent in ${roomId}`);
 
             socket.emit("waitingForOpponent", `${playerId} is Waiting in ${roomId}`);
 
           } else {
             const { playerId: opponentId, roomId } = waitingQueue.shift();
-            socket.join(roomId); // player2 joins the same room os player from waitingQueue
-  
-            const chess = new Chess();
+ 
+            socket.join(roomId); 
+
             const newGame = new Game({
               player1: opponentId,
               player2: playerId,
-              boardState: chess.fen(),
-              currentPlayer: opponentId,
+              currentPlayer : opponentId,
               status: "ongoing",
-              timers: { player1: 300, player2: 300 },
+              timers : { 
+                player1 : 300 , 
+                player2 : 300 
+              },
             });
-  
-            await newGame.save();
-  
+        
+            await newGame.save();       
+
             timers[roomId] = {
               player1: 300,
               player2: 300,
@@ -43,12 +46,13 @@ export default function setupGameSocket(io) {
               interval: null,
             };
   
-            startTimer(roomId, timers, io);
-  
+            // startTimer(roomId, timers, io);
+
+
             io.to(roomId).emit("gameStarted", {
               gameId: newGame._id,
               boardState: newGame.boardState,
-              timers: timers[roomId],
+              //timers: timers[roomId],
               player1: newGame.player1,
               player2: newGame.player2,
             });
@@ -64,10 +68,10 @@ export default function setupGameSocket(io) {
         try {
           const game = await Game.findById(gameId);
           if (!game) return socket.emit("error", "Game not found");
-  
+
           const chess = new Chess(game.boardState);
           const validMove = chess.move(move);
-  
+
           if (validMove) {
             const roomId = `room-${gameId}`;
             clearInterval(timers[roomId].interval);

@@ -19,8 +19,6 @@ function DashboardPage() {
     }
   }, []);
 
-  console.log("user in dashboard : ", user);
-
   return (
     <div className="flex h-full w-full bg-zinc-800">
       <SideBar />

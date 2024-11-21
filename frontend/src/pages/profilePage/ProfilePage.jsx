@@ -32,9 +32,7 @@ function ProfilePage() {
         if (resp.ok) {
           const data = await resp.json();
           setUserProfile(data);
-          console.log("profile data : " , data)
         } else {
-          // Handle non-200 response codes
           showToast("Error fetching User", "error");
           navigate("/sign-in");
         }
