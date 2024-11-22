@@ -9,10 +9,8 @@ import { showToast } from "../../utils/toast.js";
 import BackendURL from "../../utils/config.js";
 
 const formatTime = (milliseconds) => {
-  console.log(milliseconds)
   const minutes = Math.floor(milliseconds / 60000);
   const seconds = Math.floor((milliseconds % 60000) / 1000); // Ensure seconds is a number
-  console.log(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`)
   return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
 };
 
@@ -34,7 +32,7 @@ function PlayPage() {
 
   useEffect(() => {
     if (!gameData || !user) {
-      showToast("Unable to retrieve game information. Please try again later.", "error");
+      showToast("Unable to Load game. Please try again later.", "error");
       navigate("/dashboard");
       return;
     }
@@ -94,18 +92,18 @@ function PlayPage() {
       setFen(data.board);
       setCurrentTurn(data.turn);
       if (user === gameData.player1) {
-        setMyTime(data.timer.timers.player1);
-        setOpponentTime(data.timer.player2);
+        setMyTime(data.timers.player1);
+        setOpponentTime(data.timers.player2);
       } else {
-        setMyTime(data.timer.player2);
-        setOpponentTime(data.timer.player1);
+        setMyTime(data.timers.player2);
+        setOpponentTime(data.timers.player1);
       }
     };
 
-    const handleGameOver = (winner) => {
-      if (winner.draw) {
+    const handleGameOver = (result) => {
+      if (result.draw) {
         showToast("**** Game Draw ****", "success");
-      } else if (winner.winnerID === user) {
+      } else if (result.winnerID === user) {
         showToast("**** You Win ****", "success");
       } else {
         showToast("**** You Lose ****", "error");
@@ -137,16 +135,13 @@ function PlayPage() {
       showToast("It's not your turn!", "error");
       return false; // Prevent the move
     }
-    console.log(`Move from ${source} to ${target}`);
     const chess = chessRef.current; // Access the updated chess instance
     const move = chess.move({ from: source, to: target, promotion: 'q' }); 
     if (move) {
       setFen(chess.fen()); 
-      console.log("Valid move");
       socket.emit("makeMove", { gameId, from: source, to: target, playerId: user });
       return true; // Allow the move on the board
     } else {
-      console.log("Invalid move");
       showToast("Invalid move. Try again.", "error");
       return false; // Prevent the move
     }

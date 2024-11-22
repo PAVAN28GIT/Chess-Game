@@ -55,15 +55,7 @@ userSchema.methods.generateAccessToken = function () {
   );
 };
 
-userSchema.methods.generateRefreshToken = function () {
-  return jwt.sign(
-      {
-          _id: this._id,
-      },
-      process.env.REFRESH_TOKEN_SECRET,  // Secret key for refresh token
-      { expiresIn: process.env.REFRESH_TOKEN_EXPIRY.toString() }  // Longer expiry time, e.g., 7 days
-  );
-};
+
 
 const User = mongoose.model("User", userSchema);
 export default User;

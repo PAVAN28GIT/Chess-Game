@@ -80,7 +80,6 @@ export default function setupGameSocket(io) {
             console.log(`move made by ${playerId} from ${from} to ${to}`);
 
             if (!game) {
-                console.log("Game not found");
                 socket.emit('error', { message: 'Game not found' });
                 return;
             }
@@ -88,7 +87,6 @@ export default function setupGameSocket(io) {
             const chess = game.chess;
 
             if (game.currentPlayer !== playerId) {
-                console.log("Not your turn");
                 socket.emit('error', { message: 'Not your turn' });
                 return;
             }
@@ -96,34 +94,26 @@ export default function setupGameSocket(io) {
             try {
                 chess.move({ from, to });
                 const updatedBoard = chess.fen();
-                // chess.turn returns whose turn it is move next
                 const nextTurn = chess.turn() === 'w' ? game.player1 : game.player2;
 
                 // Check for game over conditions
                 if (isGameOver(updatedBoard)) {
-                    console.log('Game over');
-                    const result = getGameResult(chess, game.player1, game.player2);
+              
+                    const result = getGameResult(updatedBoard, game.player1, game.player2);
+               
                     game.status = 'finished';
                     game.winner = result.winnerID;
                     await Game.updateOne({ _id: gameId }, { boardState: updatedBoard, status: 'finished', winner: result.winnerID });
 
-                    io.to(gameId).emit('gameOver', { result });
+                    io.to(gameId).emit('gameOver', result );
                     delete games[gameId];
-                    console.log('Game over and deleted from memory');
                 } else {
-                    console.log('Game ongoing');
                     game.currentPlayer = nextTurn;
-
                     await Game.updateOne({ _id: gameId }, { boardState: updatedBoard, currentPlayer: nextTurn }); 
-
-                    console.log("stopping timer for player1");
 
                     // Switch timers
                     stopTimer(gameId, playerId === game.player1 ? 'player1' : 'player2');
-                    console.log("starting timer for player2");
                     startTimer(gameId, nextTurn === game.player1 ? 'player1' : 'player2', io);
-
-                    console.log("emitting boardUpdate");
 
                     io.to(gameId).emit('boardUpdate', {
                         board: updatedBoard,
@@ -170,32 +160,29 @@ function startTimer(gameId, player, io){
   const game = games[gameId];
   if (!game) return;
 
-  // Create an interval to decrement the player's timer
   const interval = setInterval(async () => {
       game.timers[player] -= 1000;
 
-      // Check if the timer has run out
+      // winner declaration --- if the timer has run out
       if (game.timers[player] <= 0) {
           clearInterval(interval);
           game.timerIntervals[player] = null;
 
-          const winner = player === "player1" ? game.player2 : game.player1;
-          game.result = winner;
+          const winnerID = player === "player1" ? game.player2 : game.player1;
+          game.result = winnerID;
 
           // Update in database 
           await Game.updateOne(
               { _id: gameId },
               {
                   status: "finished",
-                  winner,
+                  winne : winnerID,
                   timers: game.timers,
               }
           );
+          const result = { winnerID, draw: false };
 
-          io.to(gameId).emit("gameOver", {
-              winner,
-              draw: false,
-          });
+          io.to(gameId).emit("gameOver", result);
 
           // Remove the game from the in-memory storage
           delete games[gameId];
