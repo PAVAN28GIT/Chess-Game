@@ -4,50 +4,9 @@ import profilpic from "../../assets/profile-svg.svg";
 import loss from "../../assets/loss.svg";
 import win from "../../assets/win.svg";
 import { AuthContext } from "../../context/AuthContext";
-import { showToast } from "../../utils/toast";
-import { useNavigate } from "react-router-dom";
-import BackendURL from "../../utils/config.js";
 
 function ProfilePage() {
-  const { user , userProfile , setUserProfile } = useContext(AuthContext);
-
-  const navigate = useNavigate();
-
-  useEffect(() => {
-
-    const fetchUserProfile = async () => {
-      if (!user) {
-        showToast("Not logged in", "error");
-        navigate("/sign-in");
-        return;
-      }
-
-      try {
-        const id = user;
-        const resp = await fetch(`${BackendURL}/api/user/profile/${id}`, {
-          method: "GET",
-          credentials: "include",
-        });
-
-        if (resp.ok) {
-          const data = await resp.json();
-          setUserProfile(data);
-        } else {
-          showToast("Error fetching User", "error");
-          navigate("/sign-in");
-        }
-      } catch (error) {
-        // Catch any errors during the fetch
-        showToast("Error fetching User", "error");
-        navigate("/sign-in");
-      }
-    };
-
-    fetchUserProfile();
-   
-  }, [user]);
-
-
+  const {userProfile } = useContext(AuthContext);
 
   return (
     <div className="h-screen w-full text-white ">

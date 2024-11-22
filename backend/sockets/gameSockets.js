@@ -77,8 +77,10 @@ export default function setupGameSocket(io) {
         // Handle a move by a player
         socket.on('makeMove', async ({ gameId, from, to, playerId }) => {
             const game = games[gameId];
+            console.log(`move made by ${playerId} from ${from} to ${to}`);
 
             if (!game) {
+                console.log("Game not found");
                 socket.emit('error', { message: 'Game not found' });
                 return;
             }
@@ -86,38 +88,42 @@ export default function setupGameSocket(io) {
             const chess = game.chess;
 
             if (game.currentPlayer !== playerId) {
+                console.log("Not your turn");
                 socket.emit('error', { message: 'Not your turn' });
                 return;
             }
 
             try {
-                const move = chess.move({ from, to }); // make move and get move object
-
-                if (!move) {
-                    socket.emit('error', { message: 'Invalid move' });
-                    return;
-                }
-
+                chess.move({ from, to });
                 const updatedBoard = chess.fen();
+                // chess.turn returns whose turn it is move next
                 const nextTurn = chess.turn() === 'w' ? game.player1 : game.player2;
 
                 // Check for game over conditions
-                if (isGameOver(chess)) {
+                if (isGameOver(updatedBoard)) {
+                    console.log('Game over');
                     const result = getGameResult(chess, game.player1, game.player2);
                     game.status = 'finished';
-                    game.winner = result.winner;
-                    await Game.updateOne({ _id: gameId }, { boardState: updatedBoard, status: 'finished', winner: result.winner });
+                    game.winner = result.winnerID;
+                    await Game.updateOne({ _id: gameId }, { boardState: updatedBoard, status: 'finished', winner: result.winnerID });
 
                     io.to(gameId).emit('gameOver', { result });
                     delete games[gameId];
+                    console.log('Game over and deleted from memory');
                 } else {
+                    console.log('Game ongoing');
                     game.currentPlayer = nextTurn;
 
                     await Game.updateOne({ _id: gameId }, { boardState: updatedBoard, currentPlayer: nextTurn }); 
 
+                    console.log("stopping timer for player1");
+
                     // Switch timers
                     stopTimer(gameId, playerId === game.player1 ? 'player1' : 'player2');
+                    console.log("starting timer for player2");
                     startTimer(gameId, nextTurn === game.player1 ? 'player1' : 'player2', io);
+
+                    console.log("emitting boardUpdate");
 
                     io.to(gameId).emit('boardUpdate', {
                         board: updatedBoard,
@@ -126,7 +132,8 @@ export default function setupGameSocket(io) {
                     });
                 }
             } catch (error) {
-                socket.emit('error', { message: 'Invalid move' });
+                console.error(error);
+                socket.emit('error', { message: error.message });
             }
         });
 
@@ -185,7 +192,6 @@ function startTimer(gameId, player, io){
               }
           );
 
-          // Notify all connected clients about the game result
           io.to(gameId).emit("gameOver", {
               winner,
               draw: false,
@@ -194,10 +200,10 @@ function startTimer(gameId, player, io){
           // Remove the game from the in-memory storage
           delete games[gameId];
       } else {
-          // Broadcast the updated timers to the clients in the game room
           io.to(gameId).emit("timerUpdate", {  
               timers: game.timers,
           });
+          console.log("timerUpdate emit");
       }
   }, 1000);
 
@@ -207,8 +213,10 @@ function startTimer(gameId, player, io){
 
 function stopTimer(gameId, player){
   const game = games[gameId];
-  if (!game || !game.timerIntervals[player]) return;
-
+  if (!game || !game.timerIntervals[player]){
+        console.log("No timer to stop .... error in stopTimer");
+        return;
+  } 
   clearInterval(game.timerIntervals[player]);
   game.timerIntervals[player] = null;
 };
@@ -227,12 +235,12 @@ function getGameResult (boardState, player1, player2){
   const chess = new Chess(boardState);
 
   if (chess.isCheckmate()) {
-      const winner = chess.turn() === 'w' ? player2 : player1;
-      return { winner, draw: false };
+      const winnerID = chess.turn() === 'w' ? player2 : player1;
+      return { winnerID, draw: false };
   }
 
   if (chess.isDraw() || chess.isStalemate() || chess.isInsufficientMaterial()) {
-      return { winner: null, draw: true };
+      return { winnerID: null, draw: true };
   }
   return null;
 };

@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext, useEffect, useRef, useState } from "react";
 import { Chessboard } from "react-chessboard";
 import { Chess } from "chess.js";
 import SideBar from "../../components/SideBar";
@@ -8,7 +8,17 @@ import socket from "../../utils/socket.js";
 import { showToast } from "../../utils/toast.js";
 import BackendURL from "../../utils/config.js";
 
+const formatTime = (milliseconds) => {
+  console.log(milliseconds)
+  const minutes = Math.floor(milliseconds / 60000);
+  const seconds = Math.floor((milliseconds % 60000) / 1000); // Ensure seconds is a number
+  console.log(`${minutes}:${seconds < 10 ? '0' : ''}${seconds}`)
+  return `${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+};
+
+
 function PlayPage() {
+
   const { gameId } = useParams(); // gameId from URL
   const { user , userProfile } = useContext(AuthContext); // current user id form context
   const location = useLocation();
@@ -20,6 +30,7 @@ function PlayPage() {
   const [myTime, setMyTime] = useState(300000);
   const [opponentTime, setOpponentTime] = useState(300000);
   const [opponent, setOpponent] = useState("Dummy Player");
+  const chessRef = useRef(new Chess(fen)); // mutable reference to Chess instance
 
   useEffect(() => {
     if (!gameData || !user) {
@@ -32,42 +43,15 @@ function PlayPage() {
       navigate("/dashboard");
       return;
     }
-}, []);
-
-  // format time in mm:ss
-  const formatTime = (ms) => {
-    const minutes = Math.floor(ms / 60000);
-    const seconds = Math.floor((ms % 60000) / 1000);
-    return `${minutes.toString().padStart(2, "0")}:${seconds
-      .toString()
-      .padStart(2, "0")}`;
-  };
+  }, []);
 
   useEffect(() => {
-    socket.on("timerUpdate", (timer) => {
-      if (user === gameData.player1) {
-        setMyTime(timer.player1);
-        setOpponentTime(timer.player2);
-      } else {
-        setMyTime(timer.player2);
-        setOpponentTime(timer.player1);
-      }
-    });
-
-    // Handle move updates
-    socket.on("moveMade", ({ fen, turn }) => {
-      setFen(fen);
-      setCurrentTurn(turn);
-    });
-
-  },[]);
-
-  const isMyTurn = currentTurn === user;
+    chessRef.current.load(fen);
+  }, [fen]);
 
   const getName = async () => {
     try {
       const oppid = user === gameData.player1 ? gameData.player2 : gameData.player1;
-
       const res = await fetch(`${BackendURL}/api/user/${oppid}`, {
         method: "GET",
         credentials: "include",
@@ -86,9 +70,88 @@ function PlayPage() {
   };
 
   useEffect(() => {
-    getName();  // fetch opponent name
+    getName(); 
   }, []);
+
+
+  useEffect(() => {
+    const handleTimerUpdate = (timer) => {
+      if (user === gameData.player1) {
+        setMyTime(timer.timers.player1);
+        setOpponentTime(timer.timers.player2);
+      } else {
+        setMyTime(timer.timers.player2);
+        setOpponentTime(timer.timers.player1);
+      }
+    };
+
+    const handleMoveMade = ({ fen, turn }) => {
+      setFen(fen);
+      setCurrentTurn(turn);
+    };
+
+    const handleBoardUpdate = (data) => {
+      setFen(data.board);
+      setCurrentTurn(data.turn);
+      if (user === gameData.player1) {
+        setMyTime(data.timer.timers.player1);
+        setOpponentTime(data.timer.player2);
+      } else {
+        setMyTime(data.timer.player2);
+        setOpponentTime(data.timer.player1);
+      }
+    };
+
+    const handleGameOver = (winner) => {
+      if (winner.draw) {
+        showToast("**** Game Draw ****", "success");
+      } else if (winner.winnerID === user) {
+        showToast("**** You Win ****", "success");
+      } else {
+        showToast("**** You Lose ****", "error");
+      }
+      navigate("/dashboard");
+    };
+
+    // Set up socket listeners
+    socket.on("timerUpdate", handleTimerUpdate);
+    socket.on("moveMade", handleMoveMade);
+    socket.on("boardUpdate", handleBoardUpdate);
+    socket.on("gameOver", handleGameOver);
+
+    // Cleanup on unmount
+    return () => {
+      socket.off("timerUpdate", handleTimerUpdate);
+      socket.off("moveMade", handleMoveMade);
+      socket.off("boardUpdate", handleBoardUpdate);
+      socket.off("gameOver", handleGameOver);
+    };
+
+  }, []);
+
+  const isMyTurn = currentTurn === user;
   
+  const handlePieceDrop = (source, target) => {
+
+    if (!isMyTurn) {
+      showToast("It's not your turn!", "error");
+      return false; // Prevent the move
+    }
+    console.log(`Move from ${source} to ${target}`);
+    const chess = chessRef.current; // Access the updated chess instance
+    const move = chess.move({ from: source, to: target, promotion: 'q' }); 
+    if (move) {
+      setFen(chess.fen()); 
+      console.log("Valid move");
+      socket.emit("makeMove", { gameId, from: source, to: target, playerId: user });
+      return true; // Allow the move on the board
+    } else {
+      console.log("Invalid move");
+      showToast("Invalid move. Try again.", "error");
+      return false; // Prevent the move
+    }
+
+  }
 
   return (
     <div className="w-full h-screen text-white">
@@ -98,19 +161,13 @@ function PlayPage() {
         <Chessboard
           position={fen}
           boardOrientation={gameData.color}
-          onPieceDrop={(source, target) => {
-            if (!isMyTurn) {
-              showToast("It's not your turn!", "error");
-              return;
-            }
-            socket.emit("makeMove", { gameId, source, target });
-          }}
+          onPieceDrop={handlePieceDrop}
         />
       </div>
       <div className="flex flex-col justify-between my-20">
         <div className="font-ChakraPetch font-bold text-2xl rounded-xl bg-zinc-900 py-2 px-10">
           <h1>Opponent: <span className="font-thin">{opponent}</span></h1>
-          <h1>Time Left: <span className="font-thin">{formatTime(opponentTime)}</span></h1>
+          <h1>Time Left: <span className="font-thin">{formatTime(opponentTime) }</span></h1>
         </div>
         <div className="font-ChakraPetch font-bold text-2xl rounded-xl bg-zinc-900 py-2 px-10 space-y-2">
           <h1>You : <span className="font-thin">{userProfile?.user?.name}</span></h1>
@@ -123,68 +180,8 @@ function PlayPage() {
   );
 }
 
-// function PlayPage() {
-
-//   const { gameId } = useParams();
-//   const { user } = useContext(AuthContext);
-//   const location = useLocation();
-//   const gameDate = location.state?.gameData;
-
-//   if(!gameDate ) {
-//     showToast("Unable to retrieve game information. Please try again later.", "error");
-//     navigate("/dashboard");
-//     return;
-//   }
-
-//   if(gameDate && gameId !== gameDate.gameId){
-//     showToast("Game ID mismatch. Please try again later.", "error");
-//     navigate("/dashboard");
-//     return;
-//   }
-
-//   const { board, turn, color, game } = gameDate;
-
-//   const [ curGame , setCurGame] = useState(game);
-//   const [fen , setFen] = useState(board);
-//   const [ currentTurn , setCurrentTurn] = useState(turn);
-//   const [myTime , setMyTime] = useState(300000);
-//   const [opponentTime , setOpponentTime] = useState(300000);
-
-//   io.on("timerUpdate " , (timer)=>{
-//     if(user === curGame.player1){
-//       setMyTime(timer.player1);
-//       setOpponentTime(timer.player2);
-//     }else{
-//       setMyTime(timer.player2);
-//       setOpponentTime(timer.player1);
-//     }
-
-//   } )
-
-//   return (
-//     <div className="w-full h-screen object-cover text-white">
-//       <SideBar />
-//       <div className="flex ml-24 px-20 justify-between">
-//         <div className="w-[100vh] h-[100vh]">
-//           <Chessboard
-//             position={fen}
-//             //onPieceDrop={handleMove}
-//             boardOrientation={color}
-//           />
-//         </div>
-//         <div className="flex flex-col justify-between  my-20 ">
-//             <div className="font-ChakraPetch font-bold text-2xl rounded-xl bg-zinc-900 py-2 px-10 space-y-2">
-//             <h1>  Player :  <span className="font-thin">Zoro</span> </h1>
-//             <h1> Time Left : <span className="font-thin">00:00</span> </h1>
-//             </div>
-
-//             <h1 className="font-ChakraPetch font-bold text-2xl rounded-xl bg-zinc-900 py-2 px-10 "> Time Left : <span className="font-thin">00:00</span> </h1>
-
-//         </div>
-
-//       </div>
-//     </div>
-//   );
-// }
 
 export default PlayPage;
+
+
+
