@@ -190,7 +190,6 @@ function startTimer(gameId, player, io){
           io.to(gameId).emit("timerUpdate", {  
               timers: game.timers,
           });
-          console.log("timerUpdate emit");
       }
   }, 1000);
 
@@ -201,7 +200,6 @@ function startTimer(gameId, player, io){
 function stopTimer(gameId, player){
   const game = games[gameId];
   if (!game || !game.timerIntervals[player]){
-        console.log("No timer to stop .... error in stopTimer");
         return;
   } 
   clearInterval(game.timerIntervals[player]);

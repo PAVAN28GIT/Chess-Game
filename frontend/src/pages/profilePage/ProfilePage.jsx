@@ -1,12 +1,25 @@
-import React, { useContext, useEffect, useState } from "react";
+import React, { useContext , useEffect } from "react";
 import SideBar from "../../components/SideBar";
 import profilpic from "../../assets/profile-svg.svg";
 import loss from "../../assets/loss.svg";
 import win from "../../assets/win.svg";
 import { AuthContext } from "../../context/AuthContext";
+import { showToast } from "../../utils/toast";
+import { useNavigate } from "react-router-dom";
 
 function ProfilePage() {
-  const {userProfile } = useContext(AuthContext);
+
+  const navigate = useNavigate();
+  const { user , userProfile} = useContext(AuthContext);
+
+
+  useEffect(() => {
+    if (!user) {
+      console.log(user);
+      showToast("Please Login to view Profile", "error");
+      navigate("/sign-in");
+    }
+  }, [user, navigate]); 
 
   return (
     <div className="h-screen w-full text-white ">

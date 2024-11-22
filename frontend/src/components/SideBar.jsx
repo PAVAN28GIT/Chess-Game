@@ -1,33 +1,32 @@
 import { useContext } from "react";
-
+import { NavLink, useNavigate } from "react-router-dom";
+// icons
 import { SiLichess } from "react-icons/si";
 import { GoHomeFill } from "react-icons/go";
 import { CiLogout } from "react-icons/ci";
 import { GiRamProfile } from "react-icons/gi";
-
-import { NavLink, useNavigate } from "react-router-dom";
-
+import { IoMdLogIn } from "react-icons/io";
+// js files
 import { AuthContext } from "../context/AuthContext";
 import BackendURL from "../utils/config.js";
 import { showToast } from "../utils/toast.js";
 
 function SideBar() {
-  const {user} = useContext(AuthContext);
+  const { user , setUser } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const handleLogout = async() =>{
-    const res = await fetch( `${BackendURL}/api/auth/logout`, {
-      method: 'POST',
-      credentials: 'include',
+  const handleLogout = async () => {
+    const res = await fetch(`${BackendURL}/api/auth/logout`, {
+      method: "POST",
+      credentials: "include",
     });
-    if(res.ok){
-      showToast('Logged out successfully', 'success');
-      navigate('/');
+    if (res.ok) {
+      setUser(null);
+      showToast("Logged out successfully", "success");
+      navigate("/");
       return;
     }
-  }
-
-  
+  };
 
   return (
     <div className="h-full fixed w-24 z-50 bg-gradient-to-b from-black via-gray-900 to-black flex flex-col text-white items-center py-8 justify-between">
@@ -45,13 +44,29 @@ function SideBar() {
         <SidebarIcon
           icon={<GiRamProfile size="28" />}
           text="Profile"
-          to={`/user/${user}`}   
+          to={`/user/${user}`}
         />
       </div>
       <Divider />
-      <div className=" group relative hover:scale-105 hover:bg-zinc-800 rounded-full p-3">
-        <p className=" absolute opacity-0 group-hover:opacity-100 left-16 ">Logout</p>
-        <CiLogout size="28" onClick={handleLogout} className="cursor-pointer" />
+      <div className=" group relative hover:scale-105 hover:bg-zinc-800 rounded-full p-3 cursor-pointer">
+        {user ? (
+          <div>
+            <p className=" absolute opacity-0 group-hover:opacity-100 left-16 ">
+              Logout
+            </p>
+            <CiLogout
+              size="26"
+              onClick={handleLogout}
+              className="group-hover:text-pink-500 transition hover:ease-in-out duration-300"
+            /> 
+          </div>
+        ) : (
+          <SidebarIcon
+            icon={<IoMdLogIn size="28" />}
+            text="Login"
+            to="/sign-in"
+          />
+        )}
       </div>
     </div>
   );

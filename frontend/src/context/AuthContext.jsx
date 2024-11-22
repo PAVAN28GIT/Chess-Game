@@ -1,6 +1,7 @@
 import React, { createContext, useState, useEffect } from 'react';
 import BackendURL from '../utils/config.js';
 import { useNavigate } from 'react-router-dom';
+import { showToast } from '../utils/toast.js';
 
 const AuthContext = createContext();
 
@@ -28,8 +29,6 @@ const AuthProvider = ({ children }) => {
 
   const fetchUserProfile = async () => {
     if (!user) {
-      showToast("Not logged in", "error");
-      navigate("/sign-in");
       return;
     }
 
