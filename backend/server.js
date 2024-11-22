@@ -48,7 +48,7 @@ app.get('/', (req, res) => {
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/profile', userRoutes); 
+app.use('/api/user', userRoutes); 
 // app.use('/api/game', gameRoutes);
 
 

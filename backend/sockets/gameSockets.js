@@ -1,122 +1,238 @@
 import { Chess } from 'chess.js';
 import Game from '../models/gameModel.js';
-import {startTimer , isGameOver , getGameResult} from "../utils/chess.js";
 
-let waitingQueue = [];
-let timers = {};
+
+let waitingQueue = []; // Queue for players waiting to start a game
+const games = {}; // In-memory game object
 
 export default function setupGameSocket(io) {
-  
-    io.on("connection", (socket) => {
-      console.log("New Client connected:", socket.id);
+    io.on('connection', (socket) => {
+        console.log('New client connected');
 
-      socket.on("startGame", async (playerId) => {
-    
-        try {
-          if (waitingQueue.length === 0) {
-            const roomId = `room-${playerId}`;
-            waitingQueue.push({ playerId , roomId });
-            socket.join(roomId); // join that room
-            console.log(` ${playerId} is waiting for an opponent in ${roomId}`);
+        socket.on('startGame', async (playerId) => {
+            console.log(`Player ${playerId} joined the queue`);
 
-            socket.emit("waitingForOpponent", `${playerId} is Waiting in ${roomId}`);
+            if (waitingQueue.length === 0) {
+                waitingQueue.push({ playerId, socket });
+                socket.emit('waitingForOpponent', { message: 'Waiting for an opponent...' });
+            } else {
+                // Match with the first player in the queue
+                const opponent = waitingQueue.shift();
 
-          } else {
-            const { playerId: opponentId, roomId } = waitingQueue.shift();
- 
-            socket.join(roomId); 
+                const newGame = new Game({
+                    player1: opponent.playerId,
+                    player2: playerId,
+                    currentPlayer: opponent.playerId,
+                    timers: {
+                        player1: 5 * 60 * 1000, // 5 minutes in milliseconds
+                        player2: 5 * 60 * 1000,
+                    },
+                });
 
-            const newGame = new Game({
-              player1: opponentId,
-              player2: playerId,
-              currentPlayer : opponentId,
-              status: "ongoing",
-              timers : { 
-                player1 : 300 , 
-                player2 : 300 
-              },
-            });
-        
-            await newGame.save();       
+                const savedGame = await newGame.save(); // save to db
+                const gameId = savedGame._id.toString();
 
-            timers[roomId] = {
-              player1: 300,
-              player2: 300,
-              currentTimer: "player1",
-              interval: null,
-            };
-  
-            // startTimer(roomId, timers, io);
+                const chess = new Chess(); // new chess instance
 
+                games[gameId] = {
+                    chess,
+                    currentPlayer: opponent.playerId,
+                    player1: opponent.playerId,
+                    player2: playerId,
+                    timers: {
+                        player1: 5 * 60 * 1000,
+                        player2: 5 * 60 * 1000,
+                    },
+                    timerIntervals: {
+                        player1: null,
+                        player2: null,
+                    },
+                    status: 'ongoing',
+                };
 
-            io.to(roomId).emit("gameStarted", {
-              gameId: newGame._id,
-              boardState: newGame.boardState,
-              //timers: timers[roomId],
-              player1: newGame.player1,
-              player2: newGame.player2,
-            });
-  
-            console.log(`Game started between ${opponentId} and ${playerId} in ${roomId}`);
-          }
-        } catch (error) {
-          socket.emit("error", "Error starting the game");
-        }
-      });
-  
-      socket.on("makeMove", async ({ gameId, move, playerId }) => {
-        try {
-          const game = await Game.findById(gameId);
-          if (!game) return socket.emit("error", "Game not found");
+                socket.join(gameId);      // cuurent player
+                opponent.socket.join(gameId);  // opponent
 
-          const chess = new Chess(game.boardState);
-          const validMove = chess.move(move);
+                startTimer(gameId, 'player1', io);
 
-          if (validMove) {
-            const roomId = `room-${gameId}`;
-            clearInterval(timers[roomId].interval);
-  
-            const currentPlayer = timers[roomId].currentTimer === "player1" ? "player2" : "player1";
-            timers[roomId].currentTimer = currentPlayer;
-  
-            startTimer(roomId, timers, io);
-  
-            game.boardState = chess.fen();
-            game.currentPlayer = currentPlayer === "player1" ? game.player1 : game.player2;
-            await game.save();
-  
-            io.to(roomId).emit("moveMade", {
-              move,
-              boardState: game.boardState,
-              currentPlayer: timers[roomId].currentTimer,
-            });
-  
-            if (isGameOver(chess)) {
-              const result = getGameResult(chess);
-              clearInterval(timers[roomId].interval);
-  
-              game.status = "finished";
-              game.winner =
-                result === "checkmate"
-                  ? game.currentPlayer.equals(game.player1)
-                    ? game.player2
-                    : game.player1
-                  : null;
-              await game.save();
-  
-              io.to(roomId).emit("gameOver", { result, winner: game.winner });
+                opponent.socket.emit('gameStarted', {
+                    gameId,
+                    board: chess.fen(),
+                    turn: opponent.playerId,
+                    player1:  games[gameId].player1 ,
+                    player2:  games[gameId].player2 ,
+                    color: 'white',
+                });
+                socket.emit('gameStarted', {
+                    gameId,
+                    board: chess.fen(),
+                    turn: opponent.playerId,
+                    player1:  games[gameId].player1,
+                    player2:  games[gameId].player2 ,
+                    color: 'black',
+                });
             }
-          } else {
-            socket.emit("invalidMove", "Invalid move");
-          }
-        } catch (error) {
-          socket.emit("error", "Error processing move");
-        }
-      });
-  
-      socket.on("disconnect", () => {
-        console.log("Client disconnected:", socket.id);
-      });
+        });
+
+        // Handle a move by a player
+        socket.on('makeMove', async ({ gameId, from, to, playerId }) => {
+            const game = games[gameId];
+
+            if (!game) {
+                socket.emit('error', { message: 'Game not found' });
+                return;
+            }
+
+            const chess = game.chess;
+
+            if (game.currentPlayer !== playerId) {
+                socket.emit('error', { message: 'Not your turn' });
+                return;
+            }
+
+            try {
+                const move = chess.move({ from, to }); // make move and get move object
+
+                if (!move) {
+                    socket.emit('error', { message: 'Invalid move' });
+                    return;
+                }
+
+                const updatedBoard = chess.fen();
+                const nextTurn = chess.turn() === 'w' ? game.player1 : game.player2;
+
+                // Check for game over conditions
+                if (isGameOver(chess)) {
+                    const result = getGameResult(chess, game.player1, game.player2);
+                    game.status = 'finished';
+                    game.winner = result.winner;
+                    await Game.updateOne({ _id: gameId }, { boardState: updatedBoard, status: 'finished', winner: result.winner });
+
+                    io.to(gameId).emit('gameOver', { result });
+                    delete games[gameId];
+                } else {
+                    game.currentPlayer = nextTurn;
+
+                    await Game.updateOne({ _id: gameId }, { boardState: updatedBoard, currentPlayer: nextTurn }); 
+
+                    // Switch timers
+                    stopTimer(gameId, playerId === game.player1 ? 'player1' : 'player2');
+                    startTimer(gameId, nextTurn === game.player1 ? 'player1' : 'player2', io);
+
+                    io.to(gameId).emit('boardUpdate', {
+                        board: updatedBoard,
+                        turn: nextTurn,
+                        timers: game.timers,
+                    });
+                }
+            } catch (error) {
+                socket.emit('error', { message: 'Invalid move' });
+            }
+        });
+
+        // Handle reconnection
+        socket.on('reconnectGame', async ({ gameId, playerId }) => {
+            const game = games[gameId] || (await Game.findById(gameId));
+
+            if (!game) {
+                socket.emit('error', { message: 'Game not found' });
+                return;
+            }
+
+            if (![game.player1, game.player2].includes(playerId)) {
+                socket.emit('error', { message: 'You are not part of this game' });
+                return;
+            }
+
+            socket.join(gameId);
+
+            socket.emit('gameState', {
+                board: game.chess.fen(),
+                turn: game.currentPlayer,
+                timers: game.timers,
+            });
+        });
+
+        socket.on('disconnect', () => {
+            console.log('Client disconnected');
+        });
     });
+}
+
+function startTimer(gameId, player, io){
+  const game = games[gameId];
+  if (!game) return;
+
+  // Create an interval to decrement the player's timer
+  const interval = setInterval(async () => {
+      game.timers[player] -= 1000;
+
+      // Check if the timer has run out
+      if (game.timers[player] <= 0) {
+          clearInterval(interval);
+          game.timerIntervals[player] = null;
+
+          const winner = player === "player1" ? game.player2 : game.player1;
+          game.result = winner;
+
+          // Update in database 
+          await Game.updateOne(
+              { _id: gameId },
+              {
+                  status: "finished",
+                  winner,
+                  timers: game.timers,
+              }
+          );
+
+          // Notify all connected clients about the game result
+          io.to(gameId).emit("gameOver", {
+              winner,
+              draw: false,
+          });
+
+          // Remove the game from the in-memory storage
+          delete games[gameId];
+      } else {
+          // Broadcast the updated timers to the clients in the game room
+          io.to(gameId).emit("timerUpdate", {  
+              timers: game.timers,
+          });
+      }
+  }, 1000);
+
+  // Store the interval ID so it can be cleared later
+  game.timerIntervals[player] = interval;
+};
+
+function stopTimer(gameId, player){
+  const game = games[gameId];
+  if (!game || !game.timerIntervals[player]) return;
+
+  clearInterval(game.timerIntervals[player]);
+  game.timerIntervals[player] = null;
+};
+
+function isGameOver(boardState){
+  const chess = new Chess(boardState);
+
+  if (chess.isCheckmate() || chess.isDraw() || chess.isStalemate() || chess.isInsufficientMaterial()) {
+      return true;
   }
-  
+  return false;
+};
+
+
+function getGameResult (boardState, player1, player2){
+  const chess = new Chess(boardState);
+
+  if (chess.isCheckmate()) {
+      const winner = chess.turn() === 'w' ? player2 : player1;
+      return { winner, draw: false };
+  }
+
+  if (chess.isDraw() || chess.isStalemate() || chess.isInsufficientMaterial()) {
+      return { winner: null, draw: true };
+  }
+  return null;
+};

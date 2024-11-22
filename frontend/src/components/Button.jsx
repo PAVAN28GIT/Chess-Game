@@ -17,7 +17,7 @@ function Button({ text, icon }) {
         return;
       }
       const playerId = user;
-      console.log(playerId, "clicked on start game button");
+  
       socket.emit("startGame", playerId);
 
       socket.on("waitingForOpponent", (message) => {
@@ -26,12 +26,10 @@ function Button({ text, icon }) {
       });
 
       socket.on("gameStarted", (data) => {
-        console.log("game started data", data);
         const { gameId } = data;
         showToast("", "dismiss");
         showToast("Game started!", "success");
-        console.log("navigate to game page");
-        navigate(`/game/${gameId}`); // Redirect to PlayPage with gameId
+        navigate(`/game/${gameId}`, { state: { gameData: data } }); 
       });
     } catch (error) {
       showToast("", "dismiss");

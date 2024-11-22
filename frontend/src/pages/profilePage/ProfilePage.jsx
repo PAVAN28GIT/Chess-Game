@@ -9,8 +9,8 @@ import { useNavigate } from "react-router-dom";
 import BackendURL from "../../utils/config.js";
 
 function ProfilePage() {
-  const { user } = useContext(AuthContext);
-  const [userProfile , setUserProfile ]= useState(null);
+  const { user , userProfile , setUserProfile } = useContext(AuthContext);
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -24,7 +24,7 @@ function ProfilePage() {
 
       try {
         const id = user;
-        const resp = await fetch(`${BackendURL}/api/profile/${id}`, {
+        const resp = await fetch(`${BackendURL}/api/user/profile/${id}`, {
           method: "GET",
           credentials: "include",
         });
