@@ -104,9 +104,21 @@ function PlayPage() {
       if (result.draw) {
         showToast("**** Game Draw ****", "success");
       } else if (result.winnerID === user) {
-        showToast("**** You Win ****", "success");
+        if(result.res === 'Time out'){
+          showToast("**** You Win By Time Out****", "success");
+        }else if (result.res === 'Checkmate'){
+          showToast("**** You Win By Checkmate****", "success");
+        }else{
+          showToast("**** You Win ****", "success");
+        }
       } else {
-        showToast("**** You Lose ****", "error");
+        if(result.res === 'Time out'){
+          showToast("**** You Lose By Time Out****", "error");
+        }else if (result.res === 'Checkmate'){
+          showToast("**** You Lose By Checkmate****", "error");
+        }else{
+          showToast("**** You Lose ****", "error");
+        }
       }
       navigate("/dashboard");
     };
@@ -159,10 +171,16 @@ function PlayPage() {
           onPieceDrop={handlePieceDrop}
         />
       </div>
-      <div className="flex flex-col justify-between my-20">
+      <div className="flex flex-col justify-between my-20 items-center text-nowrap">
         <div className="font-ChakraPetch font-bold text-2xl rounded-xl bg-zinc-900 py-2 px-10">
-          <h1>Opponent: <span className="font-thin">{opponent}</span></h1>
+          <h1 className="font-thin">{opponent}</h1>
           <h1>Time Left: <span className="font-thin">{formatTime(opponentTime) }</span></h1>
+        </div>
+        <div>
+          {isMyTurn && 
+          <div className="px-4 py-1 rounded-lg bg-[#FFF5E0] text-black text-center font-ChakraPetch font-bold ">
+            Your Turn
+          </div>}
         </div>
         <div className="font-ChakraPetch font-bold text-2xl rounded-xl bg-zinc-900 py-2 px-10 space-y-2">
           <h1>You : <span className="font-thin">{userProfile?.user?.name}</span></h1>

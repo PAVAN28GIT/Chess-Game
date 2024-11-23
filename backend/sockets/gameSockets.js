@@ -34,7 +34,7 @@ export default function setupGameSocket(io) {
 
                 const chess = new Chess(); // new chess instance
 
-                games[gameId] = {
+                games[gameId] = { // In-Memory Object
                     chess,
                     currentPlayer: opponent.playerId,
                     player1: opponent.playerId,
@@ -109,7 +109,6 @@ export default function setupGameSocket(io) {
                     delete games[gameId];
                 } else {
                     game.currentPlayer = nextTurn;
-                    await Game.updateOne({ _id: gameId }, { boardState: updatedBoard, currentPlayer: nextTurn }); 
 
                     // Switch timers
                     stopTimer(gameId, playerId === game.player1 ? 'player1' : 'player2');
@@ -120,6 +119,7 @@ export default function setupGameSocket(io) {
                         turn: nextTurn,
                         timers: game.timers,
                     });
+                    await Game.updateOne({ _id: gameId }, { boardState: updatedBoard, currentPlayer: nextTurn }); 
                 }
             } catch (error) {
                 console.error(error);
@@ -180,7 +180,7 @@ function startTimer(gameId, player, io){
                   timers: game.timers,
               }
           );
-          const result = { winnerID, draw: false };
+          const result = { winnerID, draw: false , res:'Time out'};
 
           io.to(gameId).emit("gameOver", result);
 
@@ -221,7 +221,7 @@ function getGameResult (boardState, player1, player2){
 
   if (chess.isCheckmate()) {
       const winnerID = chess.turn() === 'w' ? player2 : player1;
-      return { winnerID, draw: false };
+      return { winnerID, draw: false , res:'Checkmate'};
   }
 
   if (chess.isDraw() || chess.isStalemate() || chess.isInsufficientMaterial()) {
