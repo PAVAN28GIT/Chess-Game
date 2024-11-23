@@ -120,7 +120,6 @@ function PlayPage() {
           showToast("**** You Lose ****", "error");
         }
       }
-      navigate("/dashboard");
     };
 
     // Set up socket listeners
