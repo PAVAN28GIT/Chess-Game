@@ -27,14 +27,18 @@ function SideBar() {
       return;
     }
   };
-
+ 
   return (
-    <div className="h-full fixed w-24 z-50 bg-gradient-to-b from-black via-gray-900 to-black flex flex-col text-white items-center py-8 justify-between">
-      <div className="flex justify-center items-center">
+    <div className=" px-10 md:px-0 w-screen bottom-0 fixed flex md:h-full  md:w-24 z-50 bg-gradient-to-b from-black via-gray-900 to-black md:flex-col text-white items-center py-8 justify-between">
+
+
+      <div className="flex justify-center items-center ">
         <SidebarIcon icon={<SiLichess size="28" />} to="/" />
       </div>
       <Divider />
-      <div className="space-y-8 w-full">
+
+
+      <div className="flex md:flex-col md:space-y-8 justify-center items-center">
         <SidebarIcon
           icon={<GoHomeFill size="28" />}
           text="Home"
@@ -47,11 +51,14 @@ function SideBar() {
           to={`/user/${user}`}
         />
       </div>
+
+
+
       <Divider />
       <div className=" group relative hover:scale-105 hover:bg-zinc-800 rounded-full p-3 cursor-pointer">
         {user ? (
           <div>
-            <p className=" absolute opacity-0 group-hover:opacity-100 left-16 ">
+            <p className=" absolute opacity-0 group-hover:opacity-100 bottom-14 md:bottom-4 md:left-16 ">
               Logout
             </p>
             <CiLogout
@@ -68,6 +75,8 @@ function SideBar() {
           />
         )}
       </div>
+
+
     </div>
   );
 }
@@ -78,16 +87,16 @@ function SidebarIcon({ icon, text, to }) {
       to={to}
       className={({ isActive }) =>
         `group relative flex items-center justify-center text-2xl w-full ${
-          isActive ? "border-r-4 border-pink-500" : ""
+          isActive ? "border-b-2 md:border-b-0  md:border-r-4 border-pink-500" : ""
         }`
       }
     >
-      <div className="flex justify-center text-white group-hover:text-pink-500 transition-all duration-300 px-3 py-1 w-full hover:cursor-pointer">
+      <div className="flex justify-center text-white group-hover:text-pink-500 transition-all duration-300 px-3 py-2 md:py-1 w-full hover:cursor-pointer">
         {icon}
       </div>
 
       {text && (
-        <span className="opacity-0 group-hover:opacity-100 rounded-md group-hover:bg-black font-lato text-white px-2 py-[1px] absolute left-20 top-1/2  -translate-y-1/2 ml-2 transition-all duration-300 whitespace-nowrap group-hover:text-white text-sm group-hover:shadow-2xl group-hover:shadow-pink-700">
+        <span className="opacity-0 group-hover:opacity-100 rounded-md group-hover:bg-black font-lato text-white px-2 py-[1px] absolute bottom-14  md:left-20 md:top-1/2  md:-translate-y-1/2 ml-2 transition-all duration-300 whitespace-nowrap group-hover:text-white text-sm group-hover:shadow-2xl group-hover:shadow-pink-700">
           {text}
         </span>
       )}
@@ -96,7 +105,7 @@ function SidebarIcon({ icon, text, to }) {
 }
 
 function Divider() {
-  return <hr className="w-full border-t border-gray-600" />;
+  return <hr className=" hidden md:block w-full border-t border-gray-600 " />;
 }
 
 export default SideBar;

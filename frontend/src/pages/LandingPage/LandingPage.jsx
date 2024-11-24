@@ -6,9 +6,9 @@ import { AuthContext } from "../../context/AuthContext";
 function LandingPage() {
   const { user } = useContext(AuthContext);
   return (
-    <>
+    <div className="h-screen">
       <Sidebar />
-      <div className="slow-appear-logo flex items-center justify-center w-full h-screen bg-cover bg-center bg-[url('/images/chess-her.png')] relative">
+      <div className="slow-appear-logo flex items-center justify-center w-full h-full bg-cover bg-center bg-[url('/images/chess-her.png')] relative">
         <div className="absolute inset-0 bg-black opacity-60"></div>
 
         <div className="relative z-10 flex flex-col items-center justify-center text-center px-20 py-16 space-y-3">
@@ -32,7 +32,7 @@ function LandingPage() {
           </div>
         </div>
       </div>
-    </>
+    </div>
   );
 }
 
