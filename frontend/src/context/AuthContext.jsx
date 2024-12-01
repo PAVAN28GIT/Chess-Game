@@ -19,8 +19,9 @@ const AuthProvider = ({ children }) => {
       console.log("verifying from auth context ..... : ",response);
       if (response.ok) {
         const userData = await response.json();
-        console.log("fetch was made to check-auth : ", userData._id);
         setUser(userData._id); 
+        localStorage.setItem('user', JSON.stringify(userData)); // Save to localStorage
+        console.log("stored user in local storage");
       }
     } catch (error) {
       console.error('Error checking authentication:', error);
@@ -63,7 +64,19 @@ const AuthProvider = ({ children }) => {
   }, []); 
 
   useEffect(() => {
-    console.log("global user context is begin changed... " , user)
+    // Check user status on mount in local storage
+    const savedUser = localStorage.getItem('user');
+    if (savedUser) {
+      const userData = JSON.parse(savedUser);
+      setUser(userData._id);
+      console.log("user set from local storage");
+    } else {
+      checkUserStatus(); // Call to verify the user's session on first load
+    }
+  }, []);
+
+  useEffect(() => {
+    console.log("global user context is begin set to : " , user)
   }, [user]);
 
   return (

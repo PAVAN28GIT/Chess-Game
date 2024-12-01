@@ -14,7 +14,7 @@ function DashboardPage() {
 
   useEffect(() => {
     if (userid && !user) {
-      (userid);
+      setUser(userid);
       console.log("user set through url");
     }
   }, []);

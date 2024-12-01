@@ -128,7 +128,7 @@ export default function setupGameSocket(io) {
         });
 
         // Handle reconnection
-        socket.on('reconnectGame', async ({ gameId, playerId }) => {
+        socket.on('recoverGame', async ({ gameId, playerId }) => {
             const game = games[gameId] || (await Game.findById(gameId));
 
             if (!game) {
@@ -141,11 +141,15 @@ export default function setupGameSocket(io) {
                 return;
             }
 
-            socket.join(gameId);
+            socket.join(gameId); // rejoin socket to room
 
-            socket.emit('gameState', {
+            socket.emit('recoverdGameState', {
+              
                 board: game.chess.fen(),
                 turn: game.currentPlayer,
+                player1:  games[gameId].player1 ,
+                player2:  games[gameId].player2 ,
+                color: playerId === game.player1 ? 'white' : 'black',
                 timers: game.timers,
             });
         });

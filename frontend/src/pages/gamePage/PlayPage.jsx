@@ -18,30 +18,57 @@ const formatTime = (milliseconds) => {
 function PlayPage() {
 
   const { gameId } = useParams(); // gameId from URL
-  const { user , userProfile } = useContext(AuthContext); // current user id form context
+  const { user, setUser , userProfile } = useContext(AuthContext); // current user id form context
+  const savedUser = localStorage.getItem('user');
   const location = useLocation();
   const navigate = useNavigate();
-  const gameData = location.state?.gameData;
+  //const gameData = location.state?.gameData;
+  const gameData  = location.state?.gameData;
   // { gameId, board, turn, color , player1 , player2} = gameData
-  const [fen, setFen] = useState(gameData.board);
-  const [currentTurn, setCurrentTurn] = useState(gameData.turn); //playerId 
+  const [fen, setFen] = useState(gameData?.board);
+  const [currentTurn, setCurrentTurn] = useState(gameData?.turn); //playerId 
   const [myTime, setMyTime] = useState(300000);
   const [opponentTime, setOpponentTime] = useState(300000);
-  const [opponent, setOpponent] = useState("Dummy Player");
+  const [opponent, setOpponent] = useState("Dummy Player"); // opponent name
   const chessRef = useRef(new Chess(fen)); // mutable reference to Chess instance
 
+
   useEffect(() => {
-    if (!gameData || !user) {
-      showToast("Unable to Load game. Please try again later.", "error");
-      navigate("/dashboard");
-      return;
+
+    if (savedUser) {
+      console.log("user from local storage" , savedUser);
+      const userData = JSON.parse(savedUser);
+      setUser(userData._id);
+      console.log("user from local storage" , userData._id);
+    } else {
+      showToast("Please sign in to play", "error");
+      navigate("/sign-in");
     }
-    if(gameId !== gameData.gameId){
-      showToast("Game ID mismatch. Please try again later.", "error");
-      navigate("/dashboard");
-      return;
-    }
-  }, []);
+
+    socket.emit("recoverGame", { gameId, playerId: user });
+
+    socket.on("recoverdGameState", (data) => {
+      console.log("Recovered Game State: ", data);
+      // data = { board, turn, player1, player2 , color , timers: { player1, player2 } }
+      setFen(data.board);
+      setCurrentTurn(data.turn);
+      gameData.player1 = data.player1;
+      gameData.player2 = data.player2;
+      gameData.color = data.color;
+
+      console.log("gameData after recovery: ", gameData);
+      
+      if(user === gameData.player1){
+        setMyTime(data.timers.player1);
+        setOpponentTime(data.timers.player2);
+      }else{
+        setMyTime(data.timers.player2);
+        setOpponentTime(data.timers.player1);
+      }
+
+    });
+   
+  }, [user]);
 
   useEffect(() => {
     chessRef.current.load(fen);
@@ -166,7 +193,7 @@ function PlayPage() {
       <div className="w-[100vh] h-[100vh]">
         <Chessboard
           position={fen}
-          boardOrientation={gameData.color}
+          boardOrientation={gameData?.color}
           onPieceDrop={handlePieceDrop}
         />
       </div>
